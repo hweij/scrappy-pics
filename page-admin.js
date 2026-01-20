@@ -77,8 +77,7 @@ export class BrowserAdmin {
             }
         }
         else {
-
-            console.warn("No page specified to remove");
+            console.log("No page specified to remove");
         }
     }
 
@@ -162,7 +161,7 @@ export class BrowserPage {
 
     /**
      * Queued image info to be processed when the DOM content has been loaded
-     * @type {{ url: string, pdist: number }[]}
+     * @type {{ name: string, url: string, pdist: number, phash: string, buffer: Buffer }[]}
      */
     imageInfo = [];
 
@@ -190,6 +189,23 @@ export class BrowserPage {
     async init() {
         const page = this.#page;
 
+        /** Browser-side function to save an image with a given url */
+        page.exposeFunction('saveImage', async (/** @type {string} */ url) => {
+            console.log("SAVE IMAGE " + url);
+            if (url) {
+                const info = this.imageInfo.find(e => e.url === url);
+                console.log(`Save image ${url}...`);
+                if (info) {
+                    console.log(`Saving ${info.name}, ${info.buffer.byteLength} bytes`);
+                    await this.#fileAdmin.addImage(info.name, info.buffer, { phash: info.phash });
+                    this.addMarkers(url, 0);
+                }
+                else {
+                    console.log("No info found");
+                }
+            }
+        });
+
         // Called when page has fully loaded
         page.on("domcontentloaded", async () => {
             console.log("DOM content loaded");
@@ -214,6 +230,7 @@ export class BrowserPage {
   width: max-content;
   border: 1.5px solid white;
   border-radius: 10px;
+  cursor: pointer;
 }
 .marker.similar > div {
   background-color: green;
@@ -225,7 +242,6 @@ export class BrowserPage {
                 this.addMarkers(url, pdist);
             }
             console.log(`Processed ${this.imageInfo.length} queued markers`);
-            this.imageInfo.length = 0;
         });
 
         // Called when navigating to a new document (frame, actually)
@@ -261,18 +277,17 @@ export class BrowserPage {
                         if (imageExtensions.has(ext)) {
                             response.buffer().then(
                                 file => {
-                                    const phash = createPerceptualHash(file).then(
+                                    createPerceptualHash(file).then(
                                         phash => {
                                             // Add image to this page's collection
                                             let pdist = this.#fileAdmin.getMinDist(phash);
                                             this.#buffers.set(url, file);
                                             if (this.#pageLoaded) {
+                                                // DOM content already loaded: add markers directly
+                                                // (if DOM content not yet loaded, this will be done on load)
                                                 this.addMarkers(url, pdist);
                                             }
-                                            else {
-                                                // DOM content not yet loaded: queue data
-                                                this.imageInfo.push({ url, pdist });
-                                            }
+                                            this.imageInfo.push({ url, pdist, phash, name: fileName, buffer: file });
                                             // try {
                                             //     const filePath = path.resolve(__dirname, "downloads", fileName);
                                             //     console.log(`Saving image: ${fileName}`);
@@ -302,9 +317,14 @@ export class BrowserPage {
             const img = /** @type HTMLElement */ (document.querySelector(`img[src="${url}"]`));
             if (img) {
                 const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
+                const marker = img.previousElementSibling;
+                if ((marker instanceof HTMLElement) && (marker.className === "marker")) {
+                    // Remove the marker if it already existed
+                    marker.remove();
+                }
                 img.insertAdjacentHTML(
                     "beforebegin",
-                    `<div class="marker"><div style="background-color: ${color};">${pdist}</div></div>`);
+                    `<div class="marker"><div style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div></div>`);
             }
         }, url, pdist);
     }
