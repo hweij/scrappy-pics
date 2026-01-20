@@ -9,9 +9,6 @@ import { FileAdmin } from './file-admin.js';
 /** Initial URL from command line */
 const initialURL = Bun.argv[2] || null;
 
-/** @type Map<string, ImageInfo> */
-const fileMap = new Map();
-
 /**
  * Configuration file
  * @type Config
@@ -37,7 +34,7 @@ console.log(`Saving files to ${mediaDir}`);
 // Make sure the media directory exists
 fs.mkdirSync(mediaDir, { recursive: true });
 
-const fileAdmin = new FileAdmin(mediaDir, fileMap);
+const fileAdmin = new FileAdmin(mediaDir);
 await fileAdmin.scan();
 console.log("File admin ready");
 
@@ -45,6 +42,6 @@ console.log("File admin ready");
 // fileAdmin.testPhash();
 // console.log("Done scanning for similar images..");
 
-const browserAdmin = new BrowserAdmin(fileMap, config);
+const browserAdmin = new BrowserAdmin(fileAdmin, config);
 
 await browserAdmin.init(initialURL);

@@ -1,9 +1,13 @@
 //@ts-check
 
 import * as path from "path";
+
 import puppeteer, { HTTPResponse, Page } from "puppeteer";
-import { createPerceptualHash, imageExtensions } from "./util.js";
 import dist from "sharp-phash/distance";
+
+import { createPerceptualHash, imageExtensions } from "./util.js";
+
+import { FileAdmin } from "./file-admin.js";
 
 export class BrowserAdmin {
     /**
@@ -16,19 +20,19 @@ export class BrowserAdmin {
     /** @type Page | undefined */
     uiPage;
 
-    /** @type Map<string, ImageInfo> */
-    fileMap = new Map();
+    /** @type FileAdmin */
+    fileAdmin;
 
     /** @type Config */
     config;
 
     /**
      *
-     * @param {Map<string, ImageInfo>} fileMap
+     * @param {FileAdmin} fileAdmin
      * @param {Config} config
      */
-    constructor(fileMap, config) {
-        this.fileMap = fileMap;
+    constructor(fileAdmin, config) {
+        this.fileAdmin = fileAdmin;
         this.config = config;
     }
 
@@ -36,11 +40,10 @@ export class BrowserAdmin {
      * Create a new administration for the given page
      *
      * @param {Page?} page
-     * @param {Map<string,ImageInfo>} hashMap
      */
-    async addPage(page, hashMap) {
+    async addPage(page) {
         if (page) {
-            const pageAdmin = await BrowserPage.create(page, hashMap);
+            const pageAdmin = await BrowserPage.create(page, this.fileAdmin);
             this.pages.set(page, pageAdmin);
         }
         else {
@@ -68,7 +71,6 @@ export class BrowserAdmin {
         }
     }
 
-
     /**
      * Initialize browser state
      *
@@ -81,7 +83,7 @@ export class BrowserAdmin {
 
         // Called when a new page has been created
         browser.on('targetcreated', async (target) => {
-            await this.addPage(await target.page(), this.fileMap);
+            await this.addPage(await target.page());
             console.log("New page created");
         });
         // Called when a page has been destroyed
@@ -106,7 +108,7 @@ export class BrowserAdmin {
                     if (url) {
                         const page = await browser.newPage();
                         await page.goto(url);
-                        await this.addPage(page, this.fileMap);
+                        await this.addPage(page);
                         page.bringToFront();
                     }
                 });
@@ -131,7 +133,7 @@ export class BrowserAdmin {
         // Observe all pages, apart from the UI page
         for (const page of pages) {
             if (page !== this.uiPage) {
-                this.addPage(page, this.fileMap);
+                this.addPage(page);
             }
         }
     }
@@ -146,8 +148,8 @@ export class BrowserPage {
      * @type Map<string, Buffer>
      */
     #buffers = new Map();
-    /** @type Map<string, ImageInfo> */
-    #fileMap;
+    /** @type FileAdmin */
+    #fileAdmin;
 
     /**
      * Queued image info to be processed when the DOM content has been loaded
@@ -159,18 +161,18 @@ export class BrowserPage {
     #pageLoaded = false;
 
     /** @param {Page} page
-     * @param {Map<string, ImageInfo>} fileMap
+     * @param {FileAdmin} fileAdmin
       */
-    constructor(page, fileMap) {
+    constructor(page, fileAdmin) {
         this.#page = page;
-        this.#fileMap = fileMap;
+        this.#fileAdmin = fileAdmin;
     }
 
     /** @param {Page} page
-     * @param {Map<string,ImageInfo>} hashMap
+     * @param {FileAdmin} fileAdmin
     */
-    static async create(page, hashMap) {
-        const pageAdmin = new BrowserPage(page, hashMap);
+    static async create(page, fileAdmin) {
+        const pageAdmin = new BrowserPage(page, fileAdmin);
         await pageAdmin.init();
         return pageAdmin;
     }
@@ -253,7 +255,7 @@ export class BrowserPage {
                                     const phash = createPerceptualHash(file).then(
                                         phash => {
                                             // Add image to this page's collection
-                                            let pdist = this.#fileMap.values().reduce((s, e) => (e.phash ? Math.min(s, dist(e.phash, phash)) : s), 100)
+                                            let pdist = this.#fileAdmin.fileMap.values().reduce((s, e) => (e.phash ? Math.min(s, dist(e.phash, phash)) : s), 100)
                                             this.#buffers.set(url, file);
                                             if (this.#pageLoaded) {
                                                 this.addMarkers(url, pdist);
@@ -290,7 +292,7 @@ export class BrowserPage {
         this.#page.evaluate((url, pdist) => {
             const img = /** @type HTMLElement */ (document.querySelector(`img[src="${url}"]`));
             if (img) {
-                const color = (pdist < 10) ? ((pdist < 5) ? "green" : "blue") : "red";
+                const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
                 img.insertAdjacentHTML(
                     "beforebegin",
                     `<div class="marker"><div style="background-color: ${color};">${pdist}</div></div>`);
