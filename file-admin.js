@@ -157,7 +157,7 @@ export class FileAdmin {
                         }
                     }
                     if (missingFiles > 0) {
-                        console.log(`Removed ${missingFiles} missing files`);
+                        console.log(`Removed ${missingFiles} entries with missing files`);
                     }
                 }
 
