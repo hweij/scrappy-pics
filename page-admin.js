@@ -49,8 +49,13 @@ export class BrowserAdmin {
      */
     async addPage(page) {
         if (page) {
-            const pageAdmin = await BrowserPage.create(page, this.fileAdmin);
-            this.pages.set(page, pageAdmin);
+            if (!this.pages.has(page)) {
+                const pageAdmin = await BrowserPage.create(page, this.fileAdmin);
+                this.pages.set(page, pageAdmin);
+            }
+            else {
+                console.log("******** Page added multiple times");
+            }
         }
         else {
             console.warn("No page specified to add");
@@ -120,7 +125,6 @@ export class BrowserAdmin {
                     if (url) {
                         const page = await browser.newPage();
                         await page.goto(url);
-                        await this.addPage(page);
                         page.bringToFront();
                     }
                 });
@@ -140,13 +144,6 @@ export class BrowserAdmin {
         if (initialURL) {
             const page = await browser.newPage();
             await page.goto(initialURL);
-        }
-
-        // Observe all pages, apart from the UI page
-        for (const page of pages) {
-            if (page !== this.uiPage) {
-                this.addPage(page);
-            }
         }
     }
 }
