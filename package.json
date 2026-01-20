@@ -1,0 +1,17 @@
+{
+  "name": "bun-puppeteer",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "puppeteer": "^24.34.0",
+    "sharp": "^0.34.5",
+    "sharp-phash": "^2.2.0"
+  }
+}
