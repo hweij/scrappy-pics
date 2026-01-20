@@ -164,10 +164,7 @@ export class FileAdmin {
                 console.log(`Total number of files: ${totalFiles}, images: ${this.#equalHash}/${this.#fileMap.size} equal to hash`);
                 console.log(`Added ${imagesAdded} images`);
 
-                if (this.changes > 0) {
-                    console.log(`${this.changes} changes: saving info`);
-                    this.saveInfo();
-                }
+                this.saveInfo();
 
                 console.log("Scanned all files and updated info");
 
