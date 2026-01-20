@@ -1,3 +1,8 @@
+interface Config {
+    mediaDir: string;
+    bookmarks: string[];
+}
+
 type ImageInfo = {
     /** File name with extension, without path */
     name: string,
