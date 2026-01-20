@@ -6,6 +6,7 @@ import * as fs from "fs";
 import dist from "sharp-phash/distance";
 
 import { binToHex, createMD5Hash, createPerceptualHash, hexToBin, imageExtensions, splitName } from './util.js';
+import { MD5 } from 'bun';
 
 /** Symbol key to indicate the file matching the entry exists */
 const PRESENT = Symbol("PRESENT");
@@ -41,6 +42,24 @@ export class FileAdmin {
      */
     getMinDist(phash) {
         return this.#fileMap.values().reduce((s, e) => (e.phash ? Math.min(s, dist(e.phash, phash)) : s), 100);
+    }
+
+    /**
+     * Add image to the collection.
+     *
+     * @param {string} name
+     * @param {Buffer} buffer
+     * @param {{hash?: string, phash?: string}} [options]
+     */
+    async addImage(name, buffer, options) {
+        const hash = options?.hash || createMD5Hash(buffer);
+        const phash = options?.phash || await createPerceptualHash(buffer);
+        if (!this.#fileMap.has(phash)) {
+            fs.writeFileSync(path.join(this.#mediaPath, name), buffer);
+            this.registerImageInfo({ name, hash, phash, size: buffer.byteLength });
+            this.changes++;
+            this.update();
+        }
     }
 
     /**
@@ -191,12 +210,18 @@ export class FileAdmin {
         console.log(`${this.#fileMap.size} files, ${this.#duplicates.size} duplicate entries, ${this.changes} changes`);
     }
 
-    saveInfo() {
-        this.#info.imageInfo = Array.from(this.#fileMap.values());
-        console.log(`Scanned ${this.#info.imageInfo.length} images`);
-        const res = JSON.stringify(this.#info, (k, v) => (k === "phash") ? binToHex(v) : v, 2);
-        this.changes = 0;
-        return Bun.write(path.join(this.#mediaPath, INFO_NAME), res);
+    /** @param {boolean} [force]  */
+    saveInfo(force) {
+        if (this.changes || force) {
+            this.#info.imageInfo = Array.from(this.#fileMap.values());
+            console.log(`${this.changes} changes, saving info, ${this.#info.imageInfo.length} images`);
+            const res = JSON.stringify(this.#info, (k, v) => (k === "phash") ? binToHex(v) : v, 2);
+            fs.writeFileSync(path.join(this.#mediaPath, INFO_NAME), res);
+            this.changes = 0;
+        }
+        else {
+            console.log("No changes, no save needed.")
+        }
     }
 
     // TEST TEST

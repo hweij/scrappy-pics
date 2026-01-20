@@ -43,5 +43,8 @@ console.log("File admin ready");
 // console.log("Done scanning for similar images..");
 
 const browserAdmin = new BrowserAdmin(fileAdmin, config);
+browserAdmin.onDisconnect = () => {
+    fileAdmin.saveInfo();
+}
 
 await browserAdmin.init(initialURL);

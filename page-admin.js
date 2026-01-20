@@ -26,6 +26,13 @@ export class BrowserAdmin {
     config;
 
     /**
+     * Callback on browser disconnect
+     *
+     * @type (() => void) | undefined
+     */
+    onDisconnect;
+
+    /**
      *
      * @param {FileAdmin} fileAdmin
      * @param {Config} config
@@ -91,6 +98,12 @@ export class BrowserAdmin {
             console.log(`Page closed`);
         });
 
+        browser.on("disconnected", () => {
+            console.log("BROWSER CLOSED");
+            if (this.onDisconnect) {
+                this.onDisconnect();
+            }
+        });
 
         const pages = await browser.pages();
         // UI page: first open page. Create a new one if needed.
