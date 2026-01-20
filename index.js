@@ -24,7 +24,7 @@ try {
     Object.assign(config, jso);
 }
 catch (e) {
-    console.log("config.json os not present or incorrect. Creating a new configuration");
+    console.log("config.json is not present or incorrect. Creating a new configuration");
 };
 console.log(config);
 

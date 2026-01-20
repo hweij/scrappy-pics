@@ -3,7 +3,6 @@
 import * as path from "path";
 
 import puppeteer, { HTTPResponse, Page } from "puppeteer";
-import dist from "sharp-phash/distance";
 
 import { createPerceptualHash, imageExtensions } from "./util.js";
 
@@ -255,7 +254,7 @@ export class BrowserPage {
                                     const phash = createPerceptualHash(file).then(
                                         phash => {
                                             // Add image to this page's collection
-                                            let pdist = this.#fileAdmin.fileMap.values().reduce((s, e) => (e.phash ? Math.min(s, dist(e.phash, phash)) : s), 100)
+                                            let pdist = this.#fileAdmin.getMinDist(phash);
                                             this.#buffers.set(url, file);
                                             if (this.#pageLoaded) {
                                                 this.addMarkers(url, pdist);

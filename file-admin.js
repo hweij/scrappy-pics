@@ -20,7 +20,7 @@ export class FileAdmin {
     #info = { imageInfo: [] };
 
     /** @type Map<string, ImageInfo> */
-    fileMap = new Map();
+    #fileMap = new Map();
     /** @type Map<string,ImageInfo> */
     #hashMap = new Map();
     /** @type Map<string, ImageInfo[]> */
@@ -32,6 +32,15 @@ export class FileAdmin {
     */
     constructor(mediaPath) {
         this.#mediaPath = mediaPath;
+    }
+
+    /**
+     * Calculate minimum perceptual distance compared to the current collection.
+     *
+     * @param {string} phash
+     */
+    getMinDist(phash) {
+        return this.#fileMap.values().reduce((s, e) => (e.phash ? Math.min(s, dist(e.phash, phash)) : s), 100);
     }
 
     /**
@@ -62,7 +71,7 @@ export class FileAdmin {
 
                 this.#hashMap.clear();
                 this.#duplicates.clear();
-                this.fileMap.clear();
+                this.#fileMap.clear();
 
                 // Load info from media info json
                 for (const e of this.#info.imageInfo) {
@@ -80,7 +89,7 @@ export class FileAdmin {
                     if (entry.isFile()) {
                         const ext = path.extname(name).toLowerCase();
                         if (imageExtensions.has(ext)) {
-                            let info = this.fileMap.get(name);
+                            let info = this.#fileMap.get(name);
                             /** @type string */
                             let hash;
                             if (info) {
@@ -121,9 +130,9 @@ export class FileAdmin {
 
                 {   // Remove entries with file missing
                     let missingFiles = 0;
-                    for (const [k, e] of this.fileMap.entries()) {
+                    for (const [k, e] of this.#fileMap.entries()) {
                         if (!e[PRESENT]) {
-                            const res = this.fileMap.delete(k);
+                            const res = this.#fileMap.delete(k);
                             this.changes++;
                             missingFiles++;
                         }
@@ -133,7 +142,7 @@ export class FileAdmin {
                     }
                 }
 
-                console.log(`Total number of files: ${totalFiles}, images: ${this.#equalHash}/${this.fileMap.size} equal to hash`);
+                console.log(`Total number of files: ${totalFiles}, images: ${this.#equalHash}/${this.#fileMap.size} equal to hash`);
                 console.log(`Added ${imagesAdded} images`);
 
                 if (this.changes > 0) {
@@ -157,7 +166,7 @@ export class FileAdmin {
      */
     registerImageInfo(info) {
         // Add to name map
-        this.fileMap.set(info.name, info);
+        this.#fileMap.set(info.name, info);
         // Add to hash map (and duplicates if needed)
         const hash = info.hash;
         const dup = this.#hashMap.get(hash);
@@ -179,11 +188,11 @@ export class FileAdmin {
     }
 
     update() {
-        console.log(`${this.fileMap.size} files, ${this.#duplicates.size} duplicate entries, ${this.changes} changes`);
+        console.log(`${this.#fileMap.size} files, ${this.#duplicates.size} duplicate entries, ${this.changes} changes`);
     }
 
     saveInfo() {
-        this.#info.imageInfo = Array.from(this.fileMap.values());
+        this.#info.imageInfo = Array.from(this.#fileMap.values());
         console.log(`Scanned ${this.#info.imageInfo.length} images`);
         const res = JSON.stringify(this.#info, (k, v) => (k === "phash") ? binToHex(v) : v, 2);
         this.changes = 0;
@@ -192,7 +201,7 @@ export class FileAdmin {
 
     // TEST TEST
     testPhash() {
-        const lst = Array.from(this.fileMap.values());
+        const lst = Array.from(this.#fileMap.values());
         const N = Math.min(10000, lst.length);
         for (let i = 0; i < N; i++) {
             const e1 = lst[i];
