@@ -3,7 +3,7 @@ interface Config {
     bookmarks: string[];
 }
 
-type ImageInfo = {
+interface ImageInfo {
     /** File name with extension, without path */
     name: string,
     /** MD5 hash */
@@ -15,3 +15,11 @@ type ImageInfo = {
     /** True only if the file was found */
     [PRESENT: symbol]: boolean | undefined;
 };
+
+interface MarkerInfo {
+    name: string;
+    url: string;
+    pdist: number;
+    phash: string;
+    buffer: Buffer;
+}

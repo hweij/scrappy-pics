@@ -161,9 +161,9 @@ export class BrowserPage {
 
     /**
      * Queued image info to be processed when the DOM content has been loaded
-     * @type {{ name: string, url: string, pdist: number, phash: string, buffer: Buffer }[]}
+     * @type {MarkerInfo[]}
      */
-    imageInfo = [];
+    markerInfo = [];
 
     /** True when the current DOM content has loaded */
     #pageLoaded = false;
@@ -193,12 +193,12 @@ export class BrowserPage {
         page.exposeFunction('saveImage', async (/** @type {string} */ url) => {
             console.log("SAVE IMAGE " + url);
             if (url) {
-                const info = this.imageInfo.find(e => e.url === url);
+                const info = this.markerInfo.find(e => e.url === url);
                 console.log(`Save image ${url}...`);
                 if (info) {
                     console.log(`Saving ${info.name}, ${info.buffer.byteLength} bytes`);
                     await this.#fileAdmin.addImage(info.name, info.buffer, { phash: info.phash });
-                    this.addMarkers(url, 0);
+                    this.addMarkers({ url: info.url, name: info.name, buffer: info.buffer, pdist: 0, phash: info.phash });
                 }
                 else {
                     console.log("No info found");
@@ -218,6 +218,9 @@ export class BrowserPage {
   height: 0px;
 }
 .marker > div {
+  width: max-content;
+}
+.marker-button {
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -227,21 +230,17 @@ export class BrowserPage {
   color: white;
   min-width: 20px;
   min-height: 20px;
-  width: max-content;
   border: 1.5px solid white;
   border-radius: 10px;
   cursor: pointer;
-}
-.marker.similar > div {
-  background-color: green;
 }`
             });
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now
-            for (const { url, pdist } of this.imageInfo) {
-                this.addMarkers(url, pdist);
+            for (const info of this.markerInfo) {
+                this.addMarkers(info);
             }
-            console.log(`Processed ${this.imageInfo.length} queued markers`);
+            console.log(`Processed ${this.markerInfo.length} queued markers`);
         });
 
         // Called when navigating to a new document (frame, actually)
@@ -253,12 +252,14 @@ export class BrowserPage {
                 console.log(`CLEARING BUFFERS (${this.#buffers.size})`)
                 this.#buffers.clear();
                 this.#pageLoaded = false;
-                this.imageInfo.length = 0;
+                this.markerInfo.length = 0;
             }
         });
 
         // Handle incoming responses
         page.on('response', this.handleResponse);
+
+        page.on('request', (req) => console.log("**** REQUEST, type = " + req.resourceType()));
     }
 
     /** Handle response that applies to this page */
@@ -271,23 +272,24 @@ export class BrowserPage {
                 const last = url.split('/').pop();
                 if (last) {
                     // Remove query part
-                    const fileName = last.split("?")[0];
-                    if (fileName) {
-                        const ext = path.extname(fileName).toLowerCase();
+                    const name = last.split("?")[0];
+                    if (name) {
+                        const ext = path.extname(name).toLowerCase();
                         if (imageExtensions.has(ext)) {
                             response.buffer().then(
-                                file => {
-                                    createPerceptualHash(file).then(
+                                buffer => {
+                                    createPerceptualHash(buffer).then(
                                         phash => {
                                             // Add image to this page's collection
                                             let pdist = this.#fileAdmin.getMinDist(phash);
-                                            this.#buffers.set(url, file);
+                                            this.#buffers.set(url, buffer);
+                                            const info = { url, pdist, phash, name, buffer };
                                             if (this.#pageLoaded) {
                                                 // DOM content already loaded: add markers directly
                                                 // (if DOM content not yet loaded, this will be done on load)
-                                                this.addMarkers(url, pdist);
+                                                this.addMarkers(info);
                                             }
-                                            this.imageInfo.push({ url, pdist, phash, name: fileName, buffer: file });
+                                            this.markerInfo.push(info);
                                             // try {
                                             //     const filePath = path.resolve(__dirname, "downloads", fileName);
                                             //     console.log(`Saving image: ${fileName}`);
@@ -309,12 +311,11 @@ export class BrowserPage {
 
     /**
      *
-     * @param {string} url
-     * @param {number} pdist
+     * @param {MarkerInfo} info
      */
-    addMarkers(url, pdist) {
-        this.#page.evaluate((url, pdist) => {
-            const img = /** @type HTMLElement */ (document.querySelector(`img[src="${url}"]`));
+    addMarkers(info) {
+        this.#page.evaluate((url, pdist, type, size) => {
+            const img = /** @type HTMLImageElement */ (document.querySelector(`img[src="${url}"]`));
             if (img) {
                 const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
                 const marker = img.previousElementSibling;
@@ -324,8 +325,12 @@ export class BrowserPage {
                 }
                 img.insertAdjacentHTML(
                     "beforebegin",
-                    `<div class="marker"><div style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div></div>`);
+                    `
+<div class="marker">
+  <div class="marker-button" style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div>
+  <div style="background-color: #00000033; color: white;">${type} ${size} ${img.naturalWidth}x${img.naturalHeight}</div>
+</div>`);
             }
-        }, url, pdist);
+        }, info.url, info.pdist, path.extname(info.name).slice(1).toUpperCase(), `${(info.buffer.byteLength / 1000).toFixed()}K`);
     }
 }
