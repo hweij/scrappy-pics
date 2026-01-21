@@ -211,16 +211,17 @@ export class BrowserPage {
             console.log("DOM content loaded");
             await page.addStyleTag({
                 content: `
+
 .marker {
-  position: absolute;
+  position:absolute;
+  color: white;
   z-index: 10;
-  width: 0px;
-  height: 0px;
 }
 .marker > div {
   width: max-content;
 }
 .marker-button {
+  margin: 8px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -233,8 +234,77 @@ export class BrowserPage {
   border: 1.5px solid white;
   border-radius: 10px;
   cursor: pointer;
+}
+.marker-info {
+  padding: 2px 4px;
+  line-height: 1;
+  background-color: #00000033;
 }`
             });
+
+            // TEST TEST page script
+            await page.evaluate(() => {
+                var interval = 0;
+
+                /** @type HTMLImageElement[] */
+                var imageCollection = [];
+
+                document.body.insertAdjacentHTML("beforeend", `<div id="imageMarkers" style="position: absolute; top: 0px; left: 0px;"></div>`);
+                const markers = document.getElementById("imageMarkers");
+
+                if (!window.addMarker) {
+                    /**
+                     *
+                     * @param {string} url
+                     * @param {number} pdist
+                     * @param {string} type
+                     * @param {string} size
+                     */
+                    window.addMarker = (url, pdist, type, size) => {
+                        imageCollection = Array.from(document.querySelectorAll("img"));
+                        if (markers) {
+                            const img = /** @type HTMLImageElement */ (document.querySelector(`img[src="${url}"]`));
+
+                            if (img) {
+                                if (img.marker) {
+                                /** @type HTMLElement */(img.marker).remove();
+                                    img.marker = undefined;
+                                }
+                                const rect = img.getBoundingClientRect();
+                                const marker = document.createElement("div");
+                                marker.className = "marker";
+                                marker.style.cssText = `left: ${rect.left}px; top: ${rect.top}px;`;
+                                const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
+                                markers.appendChild(marker);
+
+                                marker.innerHTML = `
+<div class="marker-info">${type} ${size} ${img.naturalWidth}x${img.naturalHeight}</div>
+<div class="marker-button" style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div>`;
+                                img.marker = marker;
+                            }
+                        }
+                    }
+
+                    window.layoutMarkers = () => {
+                        for (const img of imageCollection) {
+                            const marker = img.marker;
+                            if (marker) {
+                                const rect = img.getBoundingClientRect();
+                                marker.style.left = `${rect.left + window.scrollX}px`;
+                                marker.style.top = `${rect.top + window.scrollY}px`;
+                            }
+                        }
+                    }
+
+                    // Regularly update marker positions so they align with the images
+                    if (!interval) {
+                        interval = window.setInterval(() => {
+                            window.layoutMarkers();
+                        }, 1000);
+                    }
+                }
+            });
+
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now
             for (const info of this.markerInfo) {
@@ -242,6 +312,10 @@ export class BrowserPage {
             }
             console.log(`Processed ${this.markerInfo.length} queued markers`);
         });
+
+        // page.on("load", async () => {
+        //     console.log("PAGE LOAD");
+        // });
 
         // Called when navigating to a new document (frame, actually)
         page.on("framenavigated", frame => {
@@ -290,15 +364,6 @@ export class BrowserPage {
                                                 this.addMarkers(info);
                                             }
                                             this.markerInfo.push(info);
-                                            // try {
-                                            //     const filePath = path.resolve(__dirname, "downloads", fileName);
-                                            //     console.log(`Saving image: ${fileName}`);
-                                            //     const writeStream = fs.createWriteStream(filePath);
-                                            //     writeStream.write(file);
-                                            // }
-                                            // catch (e) {
-                                            //     console.error(e);
-                                            // }
                                         }
                                     )
                                 }
@@ -315,22 +380,7 @@ export class BrowserPage {
      */
     addMarkers(info) {
         this.#page.evaluate((url, pdist, type, size) => {
-            const img = /** @type HTMLImageElement */ (document.querySelector(`img[src="${url}"]`));
-            if (img) {
-                const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
-                const marker = img.previousElementSibling;
-                if ((marker instanceof HTMLElement) && (marker.className === "marker")) {
-                    // Remove the marker if it already existed
-                    marker.remove();
-                }
-                img.insertAdjacentHTML(
-                    "beforebegin",
-                    `
-<div class="marker">
-  <div class="marker-button" style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div>
-  <div style="background-color: #00000033; color: white;">${type} ${size} ${img.naturalWidth}x${img.naturalHeight}</div>
-</div>`);
-            }
+            addMarker(url, pdist, type, size);
         }, info.url, info.pdist, path.extname(info.name).slice(1).toUpperCase(), `${(info.buffer.byteLength / 1000).toFixed()}K`);
     }
 }
