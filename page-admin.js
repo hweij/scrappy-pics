@@ -252,22 +252,26 @@ export class BrowserPage {
                 document.body.insertAdjacentHTML("beforeend", `<div id="imageMarkers" style="position: absolute; top: 0px; left: 0px;"></div>`);
                 const markers = document.getElementById("imageMarkers");
 
-                if (!window.addMarker) {
+                /** Window ref */
+                const w = /** @type any */(window);
+                if (!w.addMarker) {
                     /**
-                     *
                      * @param {string} url
                      * @param {number} pdist
                      * @param {string} type
                      * @param {string} size
                      */
-                    window.addMarker = (url, pdist, type, size) => {
+                    w.addMarker = (url, pdist, type, size) => {
                         imageCollection = Array.from(document.querySelectorAll("img"));
                         if (markers) {
                             const img = /** @type HTMLImageElement */ (document.querySelector(`img[src="${url}"]`));
 
                             if (img) {
+                                // @ts-ignore
                                 if (img.marker) {
-                                /** @type HTMLElement */(img.marker).remove();
+                                    // @ts-ignore
+                                    img.marker.remove();
+                                    // @ts-ignore
                                     img.marker = undefined;
                                 }
                                 const rect = img.getBoundingClientRect();
@@ -280,14 +284,16 @@ export class BrowserPage {
                                 marker.innerHTML = `
 <div class="marker-info">${type} ${size} ${img.naturalWidth}x${img.naturalHeight}</div>
 <div class="marker-button" style="background-color: ${color};" onclick="saveImage('${url}')">${pdist}</div>`;
+                                // @ts-ignore
                                 img.marker = marker;
                             }
                         }
                     }
 
-                    window.layoutMarkers = () => {
+                    function layoutMarkers() {
                         for (const img of imageCollection) {
-                            const marker = img.marker;
+                            // @ts-ignore
+                            const marker = /** HTMLElement */(img.marker);
                             if (marker) {
                                 const rect = img.getBoundingClientRect();
                                 marker.style.left = `${rect.left + window.scrollX}px`;
@@ -299,7 +305,7 @@ export class BrowserPage {
                     // Regularly update marker positions so they align with the images
                     if (!interval) {
                         interval = window.setInterval(() => {
-                            window.layoutMarkers();
+                            layoutMarkers();
                         }, 1000);
                     }
                 }
@@ -380,6 +386,7 @@ export class BrowserPage {
      */
     addMarkers(info) {
         this.#page.evaluate((url, pdist, type, size) => {
+            // @ts-ignore
             addMarker(url, pdist, type, size);
         }, info.url, info.pdist, path.extname(info.name).slice(1).toUpperCase(), `${(info.buffer.byteLength / 1000).toFixed()}K`);
     }
