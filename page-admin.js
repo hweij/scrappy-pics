@@ -259,7 +259,7 @@ export class BrowserPage {
         // Handle incoming responses
         page.on('response', this.handleResponse);
 
-        page.on('request', (req) => console.log("**** REQUEST, type = " + req.resourceType()));
+        // page.on('request', (req) => console.log("**** REQUEST, type = " + req.resourceType()));
     }
 
     /** Handle response that applies to this page */
