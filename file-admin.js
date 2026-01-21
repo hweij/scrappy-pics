@@ -5,8 +5,7 @@ import * as fs from "fs";
 
 import dist from "sharp-phash/distance";
 
-import { binToHex, createMD5Hash, createPerceptualHash, hexToBin, imageExtensions, splitName } from './util.js';
-import { MD5 } from 'bun';
+import { binToHex, createMD5Hash, createPerceptualHash, hexToBin, imageExtensions } from './util.js';
 
 /** Symbol key to indicate the file matching the entry exists */
 const PRESENT = Symbol("PRESENT");
