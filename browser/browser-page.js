@@ -88,23 +88,25 @@ export class BrowserPage {
         //     console.log("PAGE LOAD");
         // });
 
-        // Called when navigating to a new document (frame, actually)
-        page.on("framenavigated", frame => {
-            const isMain = frame === page.mainFrame();
-            console.log(`FRAME NAVIGATED: ${isMain}`);
-            if (isMain) {
-                // Clear requested url that belong to the old page
-                console.log(`CLEARING BUFFERS (${this.#buffers.size})`)
-                this.#buffers.clear();
-                this.#pageLoaded = false;
-                this.markerInfo.length = 0;
-            }
-        });
-
         // Handle incoming responses
         page.on('response', this.handleResponse);
 
-        // page.on('request', (req) => console.log("**** REQUEST, type = " + req.resourceType()));
+        // Called when requesting data
+        // We use this to detect actual navigation instead of the "framenavigated"
+        // event because that is also triggered when navigating inside the page.
+        page.on('request', (req) => {
+            if (req.isNavigationRequest()) {
+                const frame = req.frame();
+                const isMain = frame === page.mainFrame();
+                if (isMain) {
+                    // Clear requested url that belong to the old page
+                    console.log(`CLEARING BUFFERS (${this.#buffers.size})`)
+                    this.#buffers.clear();
+                    this.#pageLoaded = false;
+                    this.markerInfo.length = 0;
+                }
+            }
+        });
     }
 
     /** Handle response that applies to this page */
