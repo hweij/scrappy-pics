@@ -1,7 +1,6 @@
 //@ts-check
 
 import * as path from "path";
-import * as fs from "fs";
 
 import { HTTPResponse, Page } from "puppeteer";
 
@@ -9,9 +8,8 @@ import { createPerceptualHash, imageExtensions } from "../util.js";
 
 import { FileAdmin } from "../file-admin.js";
 
-import * as clientSide from "./client-side/script.js";
-
-const clientStyles = fs.readFileSync(path.resolve(__dirname, "client-side/styles.css"), 'utf8')
+import clientStyles from "./client-side/styles-import.css" with { type: "text" };
+import clientScript from "./client-side/script-import.js" with { type: "text" };
 
 export class BrowserPage {
     /** @type Page */
@@ -75,12 +73,8 @@ export class BrowserPage {
         // Called when page has fully loaded
         page.on("domcontentloaded", async () => {
             console.log("DOM content loaded");
-            await page.addStyleTag({
-                content: clientStyles
-            });
-
-            // TEST TEST page script
-            await page.evaluate(clientSide.pageScript);
+            await page.addStyleTag({ content: clientStyles });
+            await page.addScriptTag({ content: /** @type string */(clientScript) });
 
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now

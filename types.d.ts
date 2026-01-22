@@ -1,3 +1,6 @@
+// To prevent warning when importing as text
+declare module '*.css';
+
 interface Config {
     mediaDir: string;
     bookmarks: string[];
