@@ -1,4 +1,4 @@
-# Scrappy
+# Scrappy pics
 
 To install dependencies:
 
