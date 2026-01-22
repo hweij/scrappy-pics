@@ -3,7 +3,7 @@
 import * as path from 'path';
 import * as fs from "fs";
 
-import { BrowserAdmin } from "./page-admin.js";
+import { BrowserAdmin } from "./browser/page-admin.js";
 import { FileAdmin } from './file-admin.js';
 
 /** Initial URL from command line */

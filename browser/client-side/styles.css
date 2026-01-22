@@ -1,0 +1,31 @@
+.marker {
+    position: absolute;
+    color: white;
+    z-index: 10;
+}
+
+.marker>div {
+    width: max-content;
+}
+
+.marker-button {
+    margin: 8px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0px 4px;
+    line-height: 1;
+    color: white;
+    min-width: 20px;
+    min-height: 20px;
+    border: 1.5px solid white;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.marker-info {
+    padding: 2px 4px;
+    line-height: 1;
+    background-color: #00000033;
+}
