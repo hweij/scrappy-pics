@@ -18,7 +18,7 @@ export function pageScript() {
 
     /**
      *
-     * @param {{url: string, pdist: number, type: string, size: string }[]} mInfoList
+     * @param {{url: string, pdist: number, type: string, size: number }[]} mInfoList
      */
     //@ts-ignore
     window.addMarkers = (mInfoList) => {
@@ -30,7 +30,7 @@ export function pageScript() {
     }
 
     /**
-     * @param {{url: string, pdist: number, type: string, size: string }} mInfo
+     * @param {{url: string, pdist: number, type: string, size: number }} mInfo
      */
     function addMarker(mInfo) {
         if (divMarkers) {
@@ -52,7 +52,7 @@ export function pageScript() {
                 divMarkers.appendChild(divMarker);
 
                 divMarker.innerHTML = `
-<div class="marker-info">${mInfo.type} ${mInfo.size} ${img.naturalWidth}x${img.naturalHeight}</div>
+<div class="marker-info">${mInfo.type} ${(mInfo.size / 1000).toFixed()}K ${img.naturalWidth}x${img.naturalHeight}</div>
 <div class="marker-button" style="background-color: ${color};">${mInfo.pdist}</div>`;
                 const button = divMarker.querySelector(".marker-button");
                 if (button) {

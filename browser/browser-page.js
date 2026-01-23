@@ -184,7 +184,7 @@ export class BrowserPage {
             url: info.url,
             pdist: info.pdist,
             type: path.extname(info.name).slice(1).toUpperCase(),
-            size: `${(info.buffer.byteLength / 1000).toFixed()}K`
+            size: info.buffer.byteLength
         })
         ));
     }
