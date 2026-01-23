@@ -87,8 +87,13 @@ export class BrowserPage {
             console.log("DOM content loaded");
 
             await page.addStyleTag({ content: clientStyles });
-            // await page.addScriptTag({ content: /** @type string */(clientScript) });
-            await page.evaluate(pageScript);
+            try {
+                await page.evaluate(pageScript);
+            }
+            catch (e) {
+                console.log("Cannot initialize script for this page");
+                console.log(e);
+            }
         });
 
         page.on("load", async () => {
