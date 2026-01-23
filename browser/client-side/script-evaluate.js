@@ -7,7 +7,7 @@ export function pageScript() {
     var imageCollection = [];
 
     document.body.insertAdjacentHTML("beforeend", `<div id="imageMarkers" style="position: absolute; top: 0px; left: 0px;"></div>`);
-    const markers = document.getElementById("imageMarkers");
+    const divMarkers = document.getElementById("imageMarkers");
 
     // Regularly update marker positions so they align with the images
     if (!interval) {
@@ -17,20 +17,24 @@ export function pageScript() {
     }
 
     /**
-     * @param {string} url
-     * @param {number} pdist
-     * @param {string} type
-     * @param {string} size
+     *
+     * @param {{url: string, pdist: number, type: string, size: string }[]} mInfoList
      */
-    // @ts-ignore
-    window.addMarker = (url, pdist, type, size) => {
-        console.log("ADD MARKER");
+    //@ts-ignore
+    window.addMarkers = (mInfoList) => {
+        console.log(`Adding ${mInfoList.length} markers`);
         imageCollection = Array.from(document.querySelectorAll("img"));
-        if (markers) {
-            // TODO: do not query all images for each marker.
-            const images = Array.from(document.querySelectorAll("img"));
-            // Find image with matching src by inspecting currentSrc. This refers to the ACTUAL url loaded.
-            const img = images.find(img => img.currentSrc === url);
+        for (const marker of mInfoList) {
+            addMarker(marker);
+        }
+    }
+
+    /**
+     * @param {{url: string, pdist: number, type: string, size: string }} mInfo
+     */
+    function addMarker(mInfo) {
+        if (divMarkers) {
+            const img = imageCollection.find(img => img.currentSrc === mInfo.url);
 
             if (img) {
                 // @ts-ignore
@@ -41,25 +45,25 @@ export function pageScript() {
                     img.marker = undefined;
                 }
                 const rect = img.getBoundingClientRect();
-                const marker = document.createElement("div");
-                marker.className = "marker";
-                marker.style.cssText = `left: ${rect.left}px; top: ${rect.top}px;`;
-                const color = (pdist < 11) ? ((pdist < 5) ? "green" : "blue") : "red";
-                markers.appendChild(marker);
+                const divMarker = document.createElement("div");
+                divMarker.className = "marker";
+                divMarker.style.cssText = `left: ${rect.left}px; top: ${rect.top}px;`;
+                const color = (mInfo.pdist < 11) ? ((mInfo.pdist < 5) ? "green" : "blue") : "red";
+                divMarkers.appendChild(divMarker);
 
-                marker.innerHTML = `
-<div class="marker-info">${type} ${size} ${img.naturalWidth}x${img.naturalHeight}</div>
-<div class="marker-button" style="background-color: ${color};">${pdist}</div>`;
-                const button = marker.querySelector(".marker-button");
+                divMarker.innerHTML = `
+<div class="marker-info">${mInfo.type} ${mInfo.size} ${img.naturalWidth}x${img.naturalHeight}</div>
+<div class="marker-button" style="background-color: ${color};">${mInfo.pdist}</div>`;
+                const button = divMarker.querySelector(".marker-button");
                 if (button) {
                     // @ts-ignore
-                    marker.onclick = () => window.saveImage(url);
+                    divMarker.onclick = () => window.saveImage(mInfo.url);
                 }
                 // @ts-ignore
-                img.marker = marker;
+                img.marker = divMarker;
             }
             else {
-                console.log(`Could not find image on page with URL ${url}`);
+                console.log(`Could not find image on page with URL ${mInfo.url}`);
             }
         }
     }

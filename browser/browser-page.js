@@ -74,7 +74,7 @@ export class BrowserPage {
                     console.log(`Saving ${info.name}, ${info.buffer.byteLength} bytes`);
                     console.log(url);
                     await this.#fileAdmin.addImage(info.name, info.buffer, { phash: info.phash });
-                    this.addMarkers({ url: info.url, name: info.name, buffer: info.buffer, pdist: 0, phash: info.phash });
+                    this.addMarkers([{ url: info.url, name: info.name, buffer: info.buffer, pdist: 0, phash: info.phash }]);
                 }
                 else {
                     console.log("No info found");
@@ -98,9 +98,7 @@ export class BrowserPage {
 
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now
-            for (const info of this.markerInfo) {
-                this.addMarkers(info);
-            }
+            this.addMarkers(this.markerInfo);
             console.log(`Processed ${this.markerInfo.length} queued markers`);
         });
 
@@ -150,7 +148,7 @@ export class BrowserPage {
                                             if (this.#pageLoaded) {
                                                 // DOM content already loaded: add markers directly
                                                 // (if DOM content not yet loaded, this will be done on load)
-                                                this.addMarkers(info);
+                                                this.addMarkers([info]);
                                             }
                                             this.markerInfo.push(info);
                                         }
@@ -165,24 +163,24 @@ export class BrowserPage {
 
     /**
      *
-     * @param {MarkerInfo} info
+     * @param {MarkerInfo[]} markers
      */
-    addMarkers(info) {
-        this.#page.evaluate((url, pdist, type, size) => {
-            // // @ts-ignore
-            // if (typeof addMarker === "function") {
-            //     // @ts-ignore
-            //     addMarker(url, pdist, type, size);
-            // }
-
+    addMarkers(markers) {
+        this.#page.evaluate((mList) => {
             // @ts-ignore
-            if (window.addMarker) {
+            if (window.addMarkers) {
                 // @ts-ignore
-                window.addMarker(url, pdist, type, size);
+                window.addMarkers(mList);
             }
             else {
-                console.log("Cannot find window.addMarker");
+                console.log("Cannot find window.addMarkers");
             }
-        }, info.url, info.pdist, path.extname(info.name).slice(1).toUpperCase(), `${(info.buffer.byteLength / 1000).toFixed()}K`);
+        }, markers.map(info => ({
+            url: info.url,
+            pdist: info.pdist,
+            type: path.extname(info.name).slice(1).toUpperCase(),
+            size: `${(info.buffer.byteLength / 1000).toFixed()}K`
+        })
+        ));
     }
 }
