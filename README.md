@@ -26,7 +26,7 @@ To run, use bun:
 bun run index.js
 ```
 
-It is trivial to port to other runtimes, but for now this is the one supported.
+It is possible to support other runtimes, but for now this is the one used.
 
 ## Configuration
 
@@ -39,8 +39,8 @@ To configure your app, create a file named "config.json" in the root of this pac
 {
     "mediaDir": "C:\\my-images",
     "bookmarks": [
-        "https://my-images1.com",
-        "https://my-images2.com"
+        "https://safebooru.org/",
+        "https://my-other-site.com/"
     ]
 }
 ```
