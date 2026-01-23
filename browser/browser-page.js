@@ -55,12 +55,24 @@ export class BrowserPage {
 
         /** Browser-side function to save an image with a given url */
         page.exposeFunction('saveImage', async (/** @type {string} */ url) => {
-            console.log("SAVE IMAGE " + url);
             if (url) {
-                const info = this.markerInfo.find(e => e.url === url);
-                console.log(`Save image ${url}...`);
+                let info = this.markerInfo.find(e => e.url === url);
+                if (!info) {
+                    console.log("No info found, fetching page again..");
+                    // TODO: No info available (anymore). Fetch page again.
+                    await page.reload();
+                    await page.waitForNetworkIdle();
+                    info = this.markerInfo.find(e => e.url === url);
+                    if (info) {
+                        console.log("Info found!");
+                    }
+                    else {
+                        console.log("Could not retrieve info, try refreshing the page and download image again.");
+                    }
+                }
                 if (info) {
                     console.log(`Saving ${info.name}, ${info.buffer.byteLength} bytes`);
+                    console.log(url);
                     await this.#fileAdmin.addImage(info.name, info.buffer, { phash: info.phash });
                     this.addMarkers({ url: info.url, name: info.name, buffer: info.buffer, pdist: 0, phash: info.phash });
                 }
