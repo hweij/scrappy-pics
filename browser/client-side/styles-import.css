@@ -1,6 +1,8 @@
 .marker {
     position: absolute;
     color: white;
+    background-color: transparent;
+    pointer-events: none;
     z-index: 10;
 }
 
@@ -9,6 +11,8 @@
 }
 
 .marker-button {
+    pointer-events: initial;
+    user-select: none;
     margin: 8px;
     box-sizing: border-box;
     display: flex;

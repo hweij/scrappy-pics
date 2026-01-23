@@ -93,9 +93,8 @@ export class BrowserPage {
 
         page.on("load", async () => {
             console.log("PAGE LOAD");
-            // const images = await page.$$eval("img", () => Array.from(document.querySelectorAll("img")).map(img => img.currentSrc));
-            // console.log("IMAGES:");
-            // console.log(images);
+            // Page needs some time before we can process the images
+            await page.waitForNetworkIdle();
 
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now
@@ -170,6 +169,12 @@ export class BrowserPage {
      */
     addMarkers(info) {
         this.#page.evaluate((url, pdist, type, size) => {
+            // // @ts-ignore
+            // if (typeof addMarker === "function") {
+            //     // @ts-ignore
+            //     addMarker(url, pdist, type, size);
+            // }
+
             // @ts-ignore
             if (window.addMarker) {
                 // @ts-ignore
