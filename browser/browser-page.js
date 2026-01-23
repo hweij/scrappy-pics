@@ -9,7 +9,7 @@ import { createPerceptualHash, imageExtensions } from "../util.js";
 import { FileAdmin } from "../file-admin.js";
 
 import clientStyles from "./client-side/styles-import.css" with { type: "text" };
-import clientScript from "./client-side/script-import.js" with { type: "text" };
+import { pageScript } from "./client-side/script-evaluate.js";
 
 export class BrowserPage {
     /** @type Page */
@@ -85,8 +85,17 @@ export class BrowserPage {
         // Called when page has fully loaded
         page.on("domcontentloaded", async () => {
             console.log("DOM content loaded");
+
             await page.addStyleTag({ content: clientStyles });
-            await page.addScriptTag({ content: /** @type string */(clientScript) });
+            // await page.addScriptTag({ content: /** @type string */(clientScript) });
+            await page.evaluate(pageScript);
+        });
+
+        page.on("load", async () => {
+            console.log("PAGE LOAD");
+            // const images = await page.$$eval("img", () => Array.from(document.querySelectorAll("img")).map(img => img.currentSrc));
+            // console.log("IMAGES:");
+            // console.log(images);
 
             this.#pageLoaded = true;
             // If image info was already added to the queue, process it now
@@ -95,10 +104,6 @@ export class BrowserPage {
             }
             console.log(`Processed ${this.markerInfo.length} queued markers`);
         });
-
-        // page.on("load", async () => {
-        //     console.log("PAGE LOAD");
-        // });
 
         // Handle incoming responses
         page.on('response', this.handleResponse);
@@ -166,7 +171,13 @@ export class BrowserPage {
     addMarkers(info) {
         this.#page.evaluate((url, pdist, type, size) => {
             // @ts-ignore
-            addMarker(url, pdist, type, size);
+            if (window.addMarker) {
+                // @ts-ignore
+                window.addMarker(url, pdist, type, size);
+            }
+            else {
+                console.log("Cannot find window.addMarker");
+            }
         }, info.url, info.pdist, path.extname(info.name).slice(1).toUpperCase(), `${(info.buffer.byteLength / 1000).toFixed()}K`);
     }
 }
