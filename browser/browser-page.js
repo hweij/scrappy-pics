@@ -132,37 +132,43 @@ export class BrowserPage {
     handleResponse =
         /** @param {HTTPResponse} response */
         (response) => {
-            const url = response.url();
-            if (response.request().resourceType() === 'image') {
-                // console.log(`resp ${url}`);
-                const last = url.split('/').pop();
-                if (last) {
-                    // Remove query part
-                    const name = last.split("?")[0];
-                    if (name) {
-                        const ext = path.extname(name).toLowerCase();
-                        if (imageExtensions.has(ext)) {
-                            response.buffer().then(
-                                buffer => {
-                                    createPerceptualHash(buffer).then(
-                                        phash => {
-                                            // Add image to this page's collection
-                                            let pdist = this.#fileAdmin.getMinDist(phash);
-                                            this.#buffers.set(url, buffer);
-                                            const info = { url, pdist, phash, name, buffer };
-                                            if (this.#pageLoaded) {
-                                                // DOM content already loaded: add markers directly
-                                                // (if DOM content not yet loaded, this will be done on load)
-                                                this.addMarkers([info]);
+            const resCode = response.status();
+            if (resCode === 200) {
+                const url = response.url();
+                if (response.request().resourceType() === 'image') {
+                    // console.log(`resp ${url}`);
+                    const last = url.split('/').pop();
+                    if (last) {
+                        // Remove query part
+                        const name = last.split("?")[0];
+                        if (name) {
+                            const ext = path.extname(name).toLowerCase();
+                            if (imageExtensions.has(ext)) {
+                                response.buffer().then(
+                                    buffer => {
+                                        createPerceptualHash(buffer).then(
+                                            phash => {
+                                                // Add image to this page's collection
+                                                let pdist = this.#fileAdmin.getMinDist(phash);
+                                                this.#buffers.set(url, buffer);
+                                                const info = { url, pdist, phash, name, buffer };
+                                                if (this.#pageLoaded) {
+                                                    // DOM content already loaded: add markers directly
+                                                    // (if DOM content not yet loaded, this will be done on load)
+                                                    this.addMarkers([info]);
+                                                }
+                                                this.markerInfo.push(info);
                                             }
-                                            this.markerInfo.push(info);
-                                        }
-                                    )
-                                }
-                            )
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
+            }
+            else {
+                console.log(`Response: ${resCode}`);
             }
         }
 
