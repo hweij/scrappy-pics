@@ -1,4 +1,4 @@
-# Scrappy pics
+# Pic hoarder
 
 A tool to download and manage images, and detect duplicates and similar images.
 
