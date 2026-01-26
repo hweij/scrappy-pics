@@ -142,7 +142,7 @@ export class BrowserAdmin {
                             if (!label) {
                                 label = bm.url;
                             }
-                            return `<div class="bookmark" onclick="openTab('${bm.url}')">${label}</div>`;
+                            return `<div class="bookmark" onclick="openTab('${bm.url}')" title="${bm.url}">${label}</div>`;
                         }).join("");
                     }
                 }, this.config);
