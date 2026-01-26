@@ -131,7 +131,19 @@ export class BrowserAdmin {
                 this.uiPage.evaluate(config => {
                     const bookmarks = document.getElementById("bookmarks");
                     if (bookmarks) {
-                        bookmarks.innerHTML = config.bookmarks.map(url => `<div class="bookmark" onclick="openTab('${url}')">${url}</div>`).join("");
+                        bookmarks.innerHTML = config.bookmarks.map(bm => {
+                            let label = "";
+                            if (bm.name) {
+                                label += `<span style="font-weight: bold;">${bm.name}</span>`;
+                            }
+                            if (bm.description) {
+                                label += ` - ${bm.description}`;
+                            }
+                            if (!label) {
+                                label = bm.url;
+                            }
+                            return `<div class="bookmark" onclick="openTab('${bm.url}')">${label}</div>`;
+                        }).join("");
                     }
                 }, this.config);
             }

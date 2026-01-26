@@ -1,9 +1,15 @@
 // To prevent warning when importing as text
 declare module '*.css';
 
+interface Bookmark {
+    name?: string;
+    description?: string;
+    url: string;
+}
+
 interface Config {
     mediaDir: string;
-    bookmarks: string[];
+    bookmarks: Bookmark[];
 }
 
 interface ImageInfo {

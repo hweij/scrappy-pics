@@ -33,15 +33,23 @@ It is possible to support other runtimes, but for now this is the one used.
 To configure your app, create a file named "config.json" in the root of this package. In this file, you can set:
 
 - mediaDir: the folder that contains the image collection
-- bookmarks: a list of UIRLs for easy navigation. See "config-template.json" for an example.
+- bookmarks: a list of bookmarks for easy navigation, with URL and optional name/description. See "config-template.json" for an example.
 
 ```
 {
-    "mediaDir": "C:\\my-images",
-    "bookmarks": [
-        "https://safebooru.org/",
-        "https://my-other-site.com/"
-    ]
+  "mediaDir": "C:\\my-images",
+  "bookmarks": [
+    {
+      "name": "Safebooru",
+      "description": "Anime pics",
+      "url": "https://safebooru.org/"
+    },
+    {
+      "name": "My site",
+      "description": "My own pics",
+      "url": "https://my-other-site.com/"
+    }
+  ]
 }
 ```
 

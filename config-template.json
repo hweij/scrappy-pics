@@ -1,7 +1,15 @@
 {
-    "mediaDir": "C:\\my-images",
-    "bookmarks": [
-        "https://safebooru.org/",
-        "https://my-other-site.com/"
-    ]
+  "mediaDir": "C:\\my-images",
+  "bookmarks": [
+    {
+      "name": "Safebooru",
+      "description": "Anime pics",
+      "url": "https://safebooru.org/"
+    },
+    {
+      "name": "My site",
+      "description": "My own pics",
+      "url": "https://my-other-site.com/"
+    }
+  ]
 }
